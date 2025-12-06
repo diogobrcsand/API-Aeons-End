@@ -51,6 +51,31 @@ app.delete('/itens/:id', (req, res) => {
     }
 });
 
+// --- 4. Rota PUT: Atualizar item por ID ---
+app.put('/itens/:id', (req, res) => {
+    const idParaAtualizar = parseInt(req.params.id);
+    const dadosAtualizados = req.body;
+    let itemEncontrado = false;
+
+    itens = itens.map(item => {
+        if (item.id === idParaAtualizar) {
+            itemEncontrado = true;
+            // Retorna o item com o nome atualizado, mantendo o ID
+            return { ...item, nome: dadosAtualizados.nome }; 
+        }
+        return item;
+    });
+
+    if (itemEncontrado) {
+        res.status(200).json({ 
+            message: `Item com ID ${idParaAtualizar} atualizado.`,
+            item: itens.find(item => item.id === idParaAtualizar) 
+        });
+    } else {
+        res.status(404).json({ message: 'Item não encontrado para atualização.' });
+    }
+});
+
 
 // Inicia o servidor
 app.listen(port, () => {
