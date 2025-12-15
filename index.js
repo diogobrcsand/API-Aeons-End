@@ -123,7 +123,7 @@ app.put('/caixas/:id', async (req, res) => { // É crucial que seja 'async'
 });
 
 // ----------------------------------------------------------------------
-// ROTA 5: GET /caixas/:id (Busca Caixa por ID)
+// ROTA 5: GET /caixas/:id (Busca Caixa por ID) colocar ID
 // ----------------------------------------------------------------------
 app.get('/caixas/:id', async (req, res) => { 
     const idBuscado = parseInt(req.params.id);
