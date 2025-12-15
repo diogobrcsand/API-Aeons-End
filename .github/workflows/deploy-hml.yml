@@ -2,9 +2,13 @@
 name: 🚀 Pipeline Homologação (HML)
 
 on:
-  push:
-    branches:
-      - homolog # Gatilho: qualquer push na branch 'homolog'
+  # NOVO GATILHO: Permite que o workflow seja iniciado manualmente pela interface do GitHub
+  workflow_dispatch: 
+    inputs:
+      motivo:
+        description: 'Motivo do Deploy (Ex: Teste da Feature X)'
+        required: false
+        default: 'Deploy manual para QA/Homologação'
 
 jobs:
   deploy-hml:
