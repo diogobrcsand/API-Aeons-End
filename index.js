@@ -9,103 +9,116 @@ const port = 3000;
 // Middleware para que a API entenda o corpo da requisição em formato JSON
 app.use(express.json());
 
-// --- Simulação de Banco de Dados (Lista em memória) ---
-let itens = [
-    { id: 1, nome: "Livro de Node.js" },
-    { id: 2, nome: "Mouse sem fio" }
-];
-let nextId = 3; // Contador para novos IDs
-
-// --- 1. Rota GET: Listar todos os itens ---
-app.get('/itens', async(req, res) => {
-   const nomeBusca = req.query.nome;
-
-    let query = db('itens'); // Inicia a query na tabela 'itens'
-
-    if (nomeBusca) {
-        // Adiciona a condição WHERE LIKE (Busca por nome)
-        query = query.where('nome', 'like', `%${nomeBusca}%`); 
+// ----------------------------------------------------------------------
+// ROTA 1: POST /caixas (Criação de Caixa Detalhada)
+// ----------------------------------------------------------------------
+app.post('/caixas', async (req, res) => {
+    // 1. Desestrutura os campos conforme o novo modelo
+    const { nome, tipo, herois, nemeis } = req.body;
+    
+    // 2. Validação básica de campos obrigatórios
+    if (!nome || !tipo) {
+        return res.status(400).json({ message: 'Os campos "nome" e "tipo" são obrigatórios.' });
     }
 
     try {
-        const itens = await query.select('*'); // Executa a consulta
-        res.status(200).json(itens);
+        // 3. Monta o objeto para inserção, usando valores padrão (0) se não fornecidos
+        const caixaParaInserir = { 
+            nome, 
+            tipo, 
+            herois: herois || 0, // Garante que é 0 se for nulo/undefined
+            nemeis: nemeis || 0 
+        };
+        
+        // 4. Insere no banco de dados na nova tabela 'caixas'
+        const [id] = await db('caixas').insert(caixaParaInserir);
+        
+        // 5. Busca o item inserido (necessário no SQLite para obter o objeto completo)
+        const caixaCriada = await db('caixas').where('id', id).first();
+
+        res.status(201).json({ 
+            message: 'Caixa registrada com sucesso!', 
+            caixa: caixaCriada 
+        });
+
     } catch (error) {
-        res.status(500).json({ message: 'Erro ao buscar itens', error: error.message });
-    } 
-});
-
-// --- 2. Rota POST: Adicionar novo item ---
-app.post('/itens', async(req, res) => {
-   const novoItem = req.body;
-
-    if (novoItem.nome) {
-        try {
-            // Insere e retorna o ID do novo item (depende do SQLite)
-            const [id] = await db('itens').insert(novoItem); 
-            const itemCriado = await db('itens').where('id', id).first();
-
-            res.status(201).json({ 
-                message: 'Item criado e salvo em disco!', 
-                item: itemCriado 
-            });
-        } catch (error) {
-            res.status(500).json({ message: 'Erro ao salvar item', error: error.message });
-        }
-    } else {
-        res.status(400).json({ message: 'O item deve ter um campo "nome".' });
+        console.error('Erro no POST /caixas:', error);
+        res.status(500).json({ message: 'Erro interno ao registrar a caixa.', error: error.message });
     }
 });
 
-// --- 3. Rota DELETE: Remover item por ID ---
-app.delete('/itens/:id', async(req, res) => {
-    const idParaDeletar = parseInt(req.params.id); // Pega o ID da URL e converte para número
+// ----------------------------------------------------------------------
+// ROTA 2: GET /caixas (Listar Todas as Caixas)
+// ----------------------------------------------------------------------
+app.get('/caixas', async (req, res) => {
+    try {
+        // Seleciona todos os registros da tabela 'caixas'
+        const caixas = await db('caixas').select('*'); 
+        
+        res.status(200).json(caixas);
+    } catch (error) {
+        console.error('Erro no GET /caixas:', error);
+        res.status(500).json({ message: 'Erro ao buscar caixas.', error: error.message });
+    }
+});
 
-try {
-        // 1. Knex monta o comando SQL: DELETE FROM itens WHERE id = [idParaDeletar]
-        const count = await db('itens').where('id', idParaDeletar).del(); 
+// ----------------------------------------------------------------------
+// ROTA 3: DELETE /caixas/:id (Deletar Caixa por ID)
+// ----------------------------------------------------------------------
+app.delete('/caixas/:id', async (req, res) => {
+    const idParaDeletar = parseInt(req.params.id);
+
+    try {
+        // Deleta o registro onde o ID corresponde, e retorna o número de linhas deletadas (count)
+        const count = await db('caixas').where('id', idParaDeletar).del(); 
 
         if (count > 0) {
-            res.status(200).json({ message: `Item com ID ${idParaDeletar} removido do banco de dados.` });
+            res.status(200).json({ message: `Caixa com ID ${idParaDeletar} removida com sucesso.` });
         } else {
-            res.status(404).json({ message: 'Item não encontrado no banco de dados.' });
+            res.status(404).json({ message: 'Caixa não encontrada para exclusão.' });
         }
     } catch (error) {
-        res.status(500).json({ message: 'Erro ao deletar item.' });
+        console.error('Erro no DELETE /caixas:', error);
+        res.status(500).json({ message: 'Erro ao deletar caixa.', error: error.message });
     }
 });
 
-// --- 4. Rota PUT: Atualizar item por ID ---
-app.put('/itens/:id', async (req, res) => { // NOTE o 'async'
+// ----------------------------------------------------------------------
+// ROTA 4: PUT /caixas/:id (Atualização de Caixa)
+// ----------------------------------------------------------------------
+app.put('/caixas/:id', async (req, res) => { // É crucial que seja 'async'
     const idParaAtualizar = parseInt(req.params.id);
-    const dadosAtualizados = req.body; // { "nome": "Novo Nome" }
+    const dadosAtualizados = req.body; // Objeto com os novos dados: {nome: "...", herois: 5}
 
-    if (!dadosAtualizados.nome) {
-        return res.status(400).json({ message: 'O corpo da requisição deve conter o campo "nome".' });
+    // 1. Opcional, mas recomendado: Evitar requisições vazias
+    if (Object.keys(dadosAtualizados).length === 0) {
+        return res.status(400).json({ message: 'Forneça dados para atualizar (nome, tipo, herois ou nemeis).' });
     }
 
     try {
-        // 1. Knex monta o comando SQL: UPDATE itens SET nome = '...' WHERE id = [idParaAtualizar]
-        const count = await db('itens')
+        // 2. Executa a atualização:
+        //    Localiza a caixa pelo ID e usa os 'dadosAtualizados' para preencher as colunas
+        const count = await db('caixas')
             .where('id', idParaAtualizar)
             .update(dadosAtualizados); 
 
         if (count > 0) {
-            // 2. Se a atualização ocorreu (count > 0), buscamos o item atualizado para retornar
-            const itemAtualizado = await db('itens')
+            // 3. Se a atualização funcionou, busca o item atualizado para retornar
+            const caixaAtualizada = await db('caixas')
                 .where('id', idParaAtualizar)
                 .first();
                 
             res.status(200).json({ 
-                message: `Item com ID ${idParaAtualizar} atualizado.`, 
-                item: itemAtualizado 
+                message: `Caixa com ID ${idParaAtualizar} atualizada com sucesso.`, 
+                caixa: caixaAtualizada 
             });
         } else {
-            // 3. Se count for 0, o item não foi encontrado
-            res.status(404).json({ message: 'Item não encontrado para atualização.' });
+            // 4. Se count for 0, o ID não foi encontrado no DB
+            res.status(404).json({ message: 'Caixa não encontrada para atualização.' });
         }
     } catch (error) {
-        res.status(500).json({ message: 'Erro ao atualizar item.', error: error.message });
+        console.error('Erro no PUT /caixas:', error);
+        res.status(500).json({ message: 'Erro ao atualizar caixa.', error: error.message });
     }
 });
 
