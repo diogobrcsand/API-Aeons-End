@@ -1,0 +1,25 @@
+# .github/workflows/deploy-main.yml
+name: 🚨 Pipeline Produção (MAIN/PRD)
+
+on:
+  push:
+    branches:
+      - main # Gatilho: qualquer push na branch 'main'
+
+jobs:
+  deploy-prd:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout do Código
+        uses: actions/checkout@v4
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar Dependências
+        run: npm install
+      
+      - name: Deploy para o Servidor de Produção
+        run: echo "🚨🚨 CÓDIGO PUBLICADO COM SUCESSO NO AMBIENTE DE PRODUÇÃO (MAIN)! Lançamento final."

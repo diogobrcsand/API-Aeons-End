@@ -1,0 +1,29 @@
+# .github/workflows/deploy-hml.yml
+name: 🚀 Pipeline Homologação (HML)
+
+on:
+  push:
+    branches:
+      - homolog # Gatilho: qualquer push na branch 'homolog'
+
+jobs:
+  deploy-hml:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout do Código
+        uses: actions/checkout@v4
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar Dependências
+        run: npm install
+      
+      # Simulação de testes automatizados
+      - name: Executar Testes (Simulação)
+        run: echo "Simulação: 🧪 Executando testes unitários e de integração para HML... APROVADO!"
+      
+      - name: Deploy para o Servidor HML
+        run: echo "🎉 CÓDIGO PUBLICADO COM SUCESSO NO AMBIENTE DE HOMOLOGAÇÃO (HML)!"
