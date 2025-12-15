@@ -122,6 +122,27 @@ app.put('/caixas/:id', async (req, res) => { // É crucial que seja 'async'
     }
 });
 
+// ----------------------------------------------------------------------
+// ROTA 5: GET /caixas/:id (Busca Caixa por ID)
+// ----------------------------------------------------------------------
+app.get('/caixas/:id', async (req, res) => { 
+    const idBuscado = parseInt(req.params.id);
+
+    try {
+        // Busca o primeiro registro na tabela 'caixas' onde o ID corresponde
+        const caixa = await db('caixas').where('id', idBuscado).first(); 
+
+        if (caixa) {
+            res.status(200).json(caixa);
+        } else {
+            res.status(404).json({ message: `Caixa com ID ${idBuscado} não encontrada.` });
+        }
+    } catch (error) {
+        console.error('Erro no GET /caixas/:id:', error);
+        res.status(500).json({ message: 'Erro ao buscar caixa.', error: error.message });
+    }
+});
+
 
 // Inicia o servidor
 app.listen(port, () => {
