@@ -23,7 +23,7 @@ jobs:
       
       # Simulação de testes automatizados
       - name: Executar Testes (Simulação)
-        run: echo "Simulação: 🧪 Executando testes unitários e de integração para HML... APROVADO!"
+        run: echo "Simulação - Executando testes unitários e de integração para HML... APROVADO!"
       
       - name: Deploy para o Servidor HML
         run: echo "🎉 CÓDIGO PUBLICADO COM SUCESSO NO AMBIENTE DE HOMOLOGAÇÃO (HML)!"
